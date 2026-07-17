@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="SmartHomeApp">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SmartHome — Home Services at Your Doorstep</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body ng-controller="AppCtrl">
+
+  <!-- NAVBAR -->
+  <nav class="navbar" ng-show="isLoggedIn()">
+    <div class="navbar-inner">
+      <a class="navbar-brand" href="#!/home">
+        <span class="brand-icon">🏠</span>
+        <span class="brand-name">SmartHome</span>
+      </a>
+      <button class="hamburger" ng-click="navOpen = !navOpen" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="nav-links" ng-class="{open: navOpen}" ng-click="navOpen=false">
+        <a class="nav-link" href="#!/home" ng-class="{active: isActive('/home')}">Home</a>
+        <a class="nav-link" href="#!/booking" ng-class="{active: isActive('/booking')}">Book Service</a>
+        <a class="nav-link" href="#!/history" ng-class="{active: isActive('/history')}">My Bookings</a>
+        <a class="nav-link" href="#!/profile" ng-class="{active: isActive('/profile')}">Profile</a>
+        <a class="nav-link" href="#!/reviews" ng-class="{active: isActive('/reviews')}">Reviews</a>
+        <div class="nav-user">
+          <span class="nav-username">👤 {{currentUser.name}}</span>
+          <button class="btn-logout" ng-click="logout()">Logout</button>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <!-- ROUTER OUTLET -->
+  <div ng-view></div>
+
+  <!-- ====================== TEMPLATES ====================== -->
+
+  <!-- LOGIN TEMPLATE -->
+  <script type="text/ng-template" id="login.html">
+    <div class="auth-page">
+      <div class="auth-card">
+        <div class="auth-logo">
+          <span class="auth-logo-icon">🏠</span>
+          <h1 class="auth-title">SmartHome</h1>
+          <p class="auth-subtitle">Professional home services at your fingertips</p>
+        </div>
+        <div class="auth-tabs">
+          <button class="auth-tab" ng-class="{active: tab==='login'}" ng-click="tab='login'">Login</button>
+          <button class="auth-tab" ng-class="{active: tab==='register'}" ng-click="tab='register'">Register</button>
+        </div>
+
+        <!-- LOGIN FORM -->
+        <form ng-show="tab==='login'" ng-submit="login()" novalidate>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" ng-model="loginData.email" placeholder="demo@home.com" />
+            <span class="form-error" ng-show="loginErrors.email">{{loginErrors.email}}</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" ng-model="loginData.password" placeholder="Enter password" />
+            <span class="form-error" ng-show="loginErrors.password">{{loginErrors.password}}</span>
+          </div>
+          <span class="form-error" ng-show="loginErrors.general">{{loginErrors.general}}</span>
+          <button class="btn-primary full-width" type="submit">Login →</button>
+          <p class="auth-hint">Demo: demo@home.com / 123456</p>
+        </form>
+
+        <!-- REGISTER FORM -->
+        <form ng-show="tab==='register'" ng-submit="register()" novalidate>
+          <div class="form-group">
+            <label class="form-label">Full Name</label>
+            <input class="form-input" type="text" ng-model="registerData.name" placeholder="Your full name" />
+            <span class="form-error" ng-show="regErrors.name">{{regErrors.name}}</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Email Address</label>
+            <input class="form-input" type="email" ng-model="registerData.email" placeholder="you@example.com" />
+            <span class="form-error" ng-show="regErrors.email">{{regErrors.email}}</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Password</label>
+            <input class="form-input" type="password" ng-model="registerData.password" placeholder="Min 6 characters" />
+            <span class="form-error" ng-show="regErrors.password">{{regErrors.password}}</span>
+          </div>
+          <span class="form-error" ng-show="regErrors.general">{{regErrors.general}}</span>
+          <button class="btn-primary full-width" type="submit">Create Account →</button>
+        </form>
+      </div>
+    </div>
+  </script>
+
+  <!-- HOME TEMPLATE -->
+  <script type="text/ng-template" id="home.html">
+    <div class="page-container">
+      <!-- HERO -->
+      <div class="hero-section">
+        <div class="hero-content">
+          <h2 class="hero-title">Welcome back, <span class="hero-name">{{stats.userName}}</span> 👋</h2>
+          <p class="hero-sub">Book trusted home services in minutes. 8 categories, 48 expert services.</p>
+        </div>
+      </div>
+
+      <!-- STATS -->
+      <div class="stats-row">
+        <div class="stat-card stat-total">
+          <div class="stat-number">{{stats.total}}</div>
+          <div class="stat-label">Total Bookings</div>
+        </div>
+        <div class="stat-card stat-pending">
+          <div class="stat-number">{{stats.pending}}</div>
+          <div class="stat-label">Pending</div>
+        </div>
+        <div class="stat-card stat-completed">
+          <div class="stat-number">{{stats.completed}}</div>
+          <div class="stat-label">Completed</div>
+        </div>
+        <div class="stat-card stat-rating">
+          <div class="stat-number">{{stats.avgRating > 0 ? stats.avgRating.toFixed(1) : '—'}}</div>
+          <div class="stat-label">Avg Rating</div>
+        </div>
+      </div>
+
+      <!-- CATEGORIES -->
+      <div class="section-header">
+        <h3 class="section-title">Our Services</h3>
+        <p class="section-sub">Tap a category to book</p>
+      </div>
+      <div class="categories-grid">
+        <div class="category-card" ng-repeat="cat in categories" ng-click="goToBooking(cat)">
+          <div class="cat-icon">{{cat.icon}}</div>
+          <div class="cat-name">{{cat.name}}</div>
+          <div class="cat-count">{{cat.services.length}} services</div>
+        </div>
+      </div>
+
+      <!-- RECENT BOOKINGS -->
+      <div class="section-header" ng-show="recentBookings.length > 0">
+        <h3 class="section-title">Recent Bookings</h3>
+        <a class="section-link" href="#!/history">View all →</a>
+      </div>
+      <div class="recent-table-wrap" ng-show="recentBookings.length > 0">
+        <table class="recent-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Date</th>
+              <th>Price</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr ng-repeat="b in recentBookings">
+              <td>
+                <div class="booking-service">{{b.serviceName}}</div>
+                <div class="booking-cat">{{b.categoryName}}</div>
+              </td>
+              <td>{{b.date | date:'dd MMM yyyy'}}</td>
+              <td class="price-cell">₹{{b.price}}</td>
+              <td><span class="badge" ng-class="'badge-'+b.status.toLowerCase()">{{b.status}}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="empty-state" ng-show="recentBookings.length === 0">
+        <div class="empty-icon">📋</div>
+        <p>No bookings yet. Book your first service above!</p>
+      </div>
+    </div>
+  </script>
+
+  <!-- BOOKING TEMPLATE -->
+  <script type="text/ng-template" id="booking.html">
+    <div class="page-container">
+      <div class="page-header">
+        <h2 class="page-title">Book a Service</h2>
+        <p class="page-sub">Follow the steps to schedule your service</p>
+      </div>
+
+      <!-- STEP INDICATOR -->
+      <div class="steps-bar">
+        <div class="step" ng-class="{active: step===1, done: step>1}">
+          <div class="step-circle">{{step > 1 ? '✓' : '1'}}</div>
+          <div class="step-label">Category</div>
+        </div>
+        <div class="step-line" ng-class="{done: step>1}"></div>
+        <div class="step" ng-class="{active: step===2, done: step>2}">
+          <div class="step-circle">{{step > 2 ? '✓' : '2'}}</div>
+          <div class="step-label">Service</div>
+        </div>
+        <div class="step-line" ng-class="{done: step>2}"></div>
+        <div class="step" ng-class="{active: step===3}">
+          <div class="step-circle">3</div>
+          <div class="step-label">Details</div>
+        </div>
+      </div>
+
+      <!-- STEP 1: CHOOSE CATEGORY -->
+      <div ng-show="step===1">
+        <h3 class="step-heading">Choose a Service Category</h3>
+        <div class="categories-grid">
+          <div class="category-card" ng-repeat="cat in categories"
+               ng-class="{selected: selectedCategory && selectedCategory.name===cat.name}"
+               ng-click="selectCategory(cat)">
+            <div class="cat-icon">{{cat.icon}}</div>
+            <div class="cat-name">{{cat.name}}</div>
+            <div class="cat-count">{{cat.services.length}} services</div>
+          </div>
+        </div>
+        <div class="step-actions">
+          <button class="btn-primary" ng-click="nextStep()" ng-disabled="!selectedCategory">Next →</button>
+        </div>
+      </div>
+
+      <!-- STEP 2: CHOOSE SERVICE -->
+      <div ng-show="step===2">
+        <h3 class="step-heading">Choose a Service — <span class="step-cat-label">{{selectedCategory.icon}} {{selectedCategory.name}}</span></h3>
+        <div class="form-group">
+          <label class="form-label">Select Service</label>
+          <select class="form-input" ng-model="selectedService" ng-options="s as s.name for s in selectedCategory.services">
+            <option value="">-- Pick a service --</option>
+          </select>
+        </div>
+        <div class="price-preview" ng-show="selectedService">
+          <span class="price-label">Service Price</span>
+          <span class="price-amount">₹{{selectedService.price}}</span>
+        </div>
+        <div class="step-actions">
+          <button class="btn-outline" ng-click="prevStep()">← Back</button>
+          <button class="btn-primary" ng-click="nextStep()" ng-disabled="!selectedService">Next →</button>
+        </div>
+      </div>
+
+      <!-- STEP 3: DETAILS -->
+      <div ng-show="step===3">
+        <h3 class="step-heading">Schedule &amp; Address</h3>
+        <div class="booking-summary-bar">
+          <span>{{selectedCategory.icon}} {{selectedCategory.name}}</span>
+          <span class="sep">›</span>
+          <span>{{selectedService.name}}</span>
+          <span class="sep">›</span>
+          <span class="price-tag">₹{{selectedService.price}}</span>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Preferred Date *</label>
+            <input class="form-input" type="date" ng-model="booking.date" min="{{todayDate}}" />
+            <span class="form-error" ng-show="bookingErrors.date">{{bookingErrors.date}}</span>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Time Slot *</label>
+            <div class="time-slots">
+              <button class="time-slot" ng-class="{active: booking.time==='Morning'}" ng-click="booking.time='Morning'">🌅 Morning<small>8am–12pm</small></button>
+              <button class="time-slot" ng-class="{active: booking.time==='Afternoon'}" ng-click="booking.time='Afternoon'">☀️ Afternoon<small>12pm–4pm</small></button>
+              <button class="time-slot" ng-class="{active: booking.time==='Evening'}" ng-click="booking.time='Evening'">🌙 Evening<small>4pm–8pm</small></button>
+            </div>
+            <span class="form-error" ng-show="bookingErrors.time">{{bookingErrors.time}}</span>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Service Address *</label>
+          <textarea class="form-input" rows="3" ng-model="booking.address" placeholder="Enter your full address..."></textarea>
+          <span class="form-error" ng-show="bookingErrors.address">{{bookingErrors.address}}</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Special Notes <span class="optional">(optional)</span></label>
+          <textarea class="form-input" rows="2" ng-model="booking.notes" placeholder="Any special instructions..."></textarea>
+        </div>
+        <div class="step-actions">
+          <button class="btn-outline" ng-click="prevStep()">← Back</button>
+          <button class="btn-primary" ng-click="submitBooking()">Confirm Booking ✓</button>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <!-- HISTORY TEMPLATE -->
+  <script type="text/ng-template" id="history.html">
+    <div class="page-container">
+      <div class="page-header">
+        <h2 class="page-title">My Bookings</h2>
+        <p class="page-sub">Track and manage all your service requests</p>
+      </div>
+
+      <!-- FILTER TABS -->
+      <div class="filter-tabs">
+        <button class="filter-tab" ng-repeat="f in filters" ng-class="{active: filterStatus===f}" ng-click="filterStatus=f">{{f}}</button>
+      </div>
+
+      <!-- BOOKING CARDS -->
+      <div class="bookings-list">
+        <div class="booking-card" ng-repeat="b in filtered()" ng-animate="'fade'">
+          <div class="booking-card-header">
+            <div>
+              <div class="booking-card-service">{{b.serviceName}}</div>
+              <div class="booking-card-cat">{{b.categoryIcon}} {{b.categoryName}}</div>
+            </div>
+            <span class="badge" ng-class="'badge-'+b.status.toLowerCase()">{{b.status}}</span>
+          </div>
+          <div class="booking-card-body">
+            <div class="booking-meta">
+              <span class="meta-item">📅 {{b.date | date:'EEE, dd MMM yyyy'}}</span>
+              <span class="meta-item">⏰ {{b.time}}</span>
+              <span class="meta-item">📍 {{b.address}}</span>
+            </div>
+            <div class="booking-card-footer">
+              <span class="booking-price">₹{{b.price}}</span>
+              <div class="booking-actions">
+                <button class="btn-danger-sm" ng-show="b.status==='Pending'" ng-click="cancel(b.id)">✕ Cancel</button>
+                <button class="btn-accent-sm" ng-show="b.status==='Completed' && !b.review" ng-click="goToReview(b.id)">★ Rate</button>
+                <span class="reviewed-tag" ng-show="b.review">★ {{b.review.rating}}/5</span>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="empty-state" ng-show="filtered().length === 0">
+          <div class="empty-icon">📦</div>
+          <p>No {{filterStatus === 'All' ? '' : filterStatus.toLowerCase() + ' '}}bookings found.</p>
+          <a class="btn-primary" href="#!/booking">Book a Service</a>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <!-- PROFILE TEMPLATE -->
+  <script type="text/ng-template" id="profile.html">
+    <div class="page-container">
+      <div class="page-header">
+        <h2 class="page-title">My Profile</h2>
+        <p class="page-sub">Manage your personal information</p>
+      </div>
+      <div class="profile-layout">
+        <!-- FORM -->
+        <div class="profile-form-card">
+          <div class="profile-avatar">
+            <span class="avatar-icon">{{profileData.name.charAt(0).toUpperCase()}}</span>
+          </div>
+          <form ng-submit="save()" novalidate>
+            <div class="form-group">
+              <label class="form-label">Full Name</label>
+              <input class="form-input" type="text" ng-model="profileData.name" placeholder="Your name" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Email Address</label>
+              <input class="form-input" type="email" ng-model="profileData.email" placeholder="you@example.com" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Phone Number</label>
+              <input class="form-input" type="tel" ng-model="profileData.phone" placeholder="+91 XXXXX XXXXX" />
+            </div>
+            <div class="form-group">
+              <label class="form-label">Address</label>
+              <textarea class="form-input" rows="3" ng-model="profileData.address" placeholder="Your home address"></textarea>
+            </div>
+            <div class="form-actions">
+              <button class="btn-primary" type="submit">Save Changes</button>
+              <span class="save-success" ng-show="saved">✓ Profile updated!</span>
+            </div>
+          </form>
+        </div>
+
+        <!-- STATS SIDEBAR -->
+        <div class="profile-stats">
+          <div class="profile-stat-card">
+            <div class="pstat-icon">📋</div>
+            <div class="pstat-num">{{profileStats.total}}</div>
+            <div class="pstat-label">Total Bookings</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="pstat-icon">✅</div>
+            <div class="pstat-num">{{profileStats.completed}}</div>
+            <div class="pstat-label">Completed</div>
+          </div>
+          <div class="profile-stat-card">
+            <div class="pstat-icon">⭐</div>
+            <div class="pstat-num">{{profileStats.avgRating > 0 ? profileStats.avgRating.toFixed(1) : '—'}}</div>
+            <div class="pstat-label">Avg Rating</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <!-- REVIEWS TEMPLATE -->
+  <script type="text/ng-template" id="reviews.html">
+    <div class="page-container">
+      <div class="page-header">
+        <h2 class="page-title">Ratings &amp; Reviews</h2>
+        <p class="page-sub">Share your experience with our services</p>
+      </div>
+
+      <!-- SUBMIT REVIEW -->
+      <div class="review-form-card" ng-show="completedBookings.length > 0">
+        <h3 class="review-form-title">Write a Review</h3>
+        <div class="form-group">
+          <label class="form-label">Select Completed Booking</label>
+          <select class="form-input" ng-model="selectedBooking" ng-options="b as b.serviceName + ' — ' + (b.date | date:'dd MMM yyyy') for b in completedBookings">
+            <option value="">-- Select a booking to review --</option>
+          </select>
+        </div>
+        <div ng-show="selectedBooking">
+          <div class="form-group">
+            <label class="form-label">Your Rating</label>
+            <div class="star-rating">
+              <span class="star"
+                    ng-repeat="n in [1,2,3,4,5]"
+                    ng-class="{active: n <= (hoverRating || rating), hovered: n <= hoverRating}"
+                    ng-mouseover="hover(n)"
+                    ng-mouseleave="hoverRating=0"
+                    ng-click="setRating(n)">★</span>
+              <span class="rating-label" ng-show="rating > 0">{{ratingLabels[rating-1]}}</span>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Review</label>
+            <textarea class="form-input" rows="4" ng-model="reviewText" placeholder="Tell us about your experience..."></textarea>
+          </div>
+          <span class="form-error" ng-show="reviewError">{{reviewError}}</span>
+          <button class="btn-primary" ng-click="submitReview()">Submit Review</button>
+          <span class="save-success" ng-show="reviewSubmitted">✓ Review submitted!</span>
+        </div>
+      </div>
+      <div class="empty-state" ng-show="completedBookings.length === 0">
+        <div class="empty-icon">⭐</div>
+        <p>No completed bookings to review yet.</p>
+      </div>
+
+      <!-- PAST REVIEWS -->
+      <div ng-show="pastReviews.length > 0">
+        <h3 class="section-title" style="margin: 2rem 0 1rem;">Your Reviews</h3>
+        <div class="review-card" ng-repeat="r in pastReviews">
+          <div class="review-card-header">
+            <div>
+              <div class="review-service">{{r.serviceName}}</div>
+              <div class="review-date">{{r.date | date:'dd MMM yyyy'}}</div>
+            </div>
+            <div class="review-stars">
+              <span class="star active" ng-repeat="n in [1,2,3,4,5]" ng-class="{active: n <= r.review.rating}">★</span>
+            </div>
+          </div>
+          <div class="review-text" ng-show="r.review.text">"{{r.review.text}}"</div>
+        </div>
+      </div>
+    </div>
+  </script>
+
+  <!-- JS -->
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.8.3/angular-route.min.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
